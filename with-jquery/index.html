@@ -1,0 +1,471 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Employee Manager</title>
+    <link rel="stylesheet" href="./css/bootstrap.min.css" />
+    <script src="./js/jquery-3.6.0.min.js"></script>
+    <script src="./js/bootstrap.bundle.min.js"></script>
+    <script src="./js/service.js"></script>
+
+    <style>
+      body {
+        padding: 20px;
+      }
+      .employee-list {
+        margin-top: 20px;
+      }
+      .img-thumbnail {
+        width: 60px;
+        height: 60px;
+        object-fit: cover;
+      }
+    </style>
+  </head>
+  <body>
+    <h1 class="text-center">Employee Manager</h1>
+    <!-- Toast container -->
+    <div class="position-fixed bottom-0 end-0 p-3" style="z-index: 1055">
+      <div
+        id="liveToast"
+        class="toast"
+        role="alert"
+        aria-live="assertive"
+        aria-atomic="true"
+      >
+        <div class="toast-header">
+          <strong class="me-auto">Notification</strong>
+          <button
+            type="button"
+            class="btn-close"
+            data-bs-dismiss="toast"
+            aria-label="Close"
+          ></button>
+        </div>
+        <div class="toast-body">Hello, this is a toast message!</div>
+      </div>
+    </div>
+    <!-- Edit Employee Modal -->
+    <div class="modal fade" id="editModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <form id="editForm" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Edit Employee</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="editId" />
+            <div class="mb-3">
+              <label class="form-label">Name</label>
+              <input type="text" id="editName" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Email</label>
+              <input type="email" id="editEmail" class="form-control" />
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Password</label>
+              <input type="password" id="editPassword" class="form-control" />
+              <span>Keep it empty if you don't want to change it</span>
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-primary" type="submit">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Augment Salary Modal -->
+    <div class="modal fade" id="salaryModal" tabindex="-1" aria-hidden="true">
+      <div class="modal-dialog">
+        <form id="salaryForm" class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Augment Salary</h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <input type="hidden" id="salaryId" />
+            <p><strong>Name:</strong> <span id="salaryName"></span></p>
+            <p>
+              <strong>Current Salary:</strong>
+              <span id="currentSalary"></span> MAD
+            </p>
+            <div class="mb-3">
+              <label class="form-label">New Salary</label>
+              <input type="number" id="augmentation" class="form-control" />
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button class="btn btn-success" type="submit">Update Salary</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Single Employee Modal -->
+    <div
+      class="modal fade"
+      id="employeeShowModal"
+      tabindex="-1"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title" id="employeeName"></h5>
+            <button
+              type="button"
+              class="btn-close"
+              data-bs-dismiss="modal"
+            ></button>
+          </div>
+          <div class="modal-body">
+            <div>
+              <div
+                id="employeePhoto"
+                style="display: flex; justify-content: center"
+              ></div>
+            </div>
+            <p><strong>Id</strong> <span id="employeeId"></span></p>
+            <p><strong>Email</strong> <span id="employeeEmail"></span></p>
+            <p>
+              <strong>Current Salary</strong>
+              <span id="employeeSalary"></span> MAD
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Add Employee Button -->
+    <button
+      class="btn btn-primary"
+      data-bs-toggle="modal"
+      data-bs-target="#employeeModal"
+    >
+      Add Employee
+    </button>
+
+    <!-- Search -->
+    <div class="my-3">
+      <input
+        type="text"
+        id="searchInput"
+        class="form-control"
+        placeholder="Search employee by name"
+      />
+    </div>
+
+    <!-- Employee Table -->
+    <table class="table table-bordered employee-list">
+      <thead>
+        <tr>
+          <th>Photo</th>
+          <th>Name</th>
+          <th>Action</th>
+        </tr>
+      </thead>
+      <tbody id="employeeTable"></tbody>
+    </table>
+
+    <!-- Add Employee Modal -->
+    <div
+      class="modal fade"
+      id="employeeModal"
+      tabindex="-1"
+      aria-labelledby="employeeModalLabel"
+      aria-hidden="true"
+    >
+      <div class="modal-dialog">
+        <div class="modal-content">
+          <form id="employeeForm">
+            <div class="modal-header">
+              <h5 class="modal-title" id="employeeModalLabel">
+                Add New Employee
+              </h5>
+              <button
+                type="button"
+                class="btn-close"
+                data-bs-dismiss="modal"
+              ></button>
+            </div>
+            <div class="modal-body">
+              <div id="formErrors" class="alert alert-danger d-none"></div>
+
+              <div class="mb-3">
+                <label for="empName" class="form-label">Name</label>
+                <input type="text" class="form-control" id="empName" />
+              </div>
+
+              <div class="mb-3">
+                <label for="empEmail" class="form-label">Email</label>
+                <input type="email" class="form-control" id="empEmail" />
+              </div>
+
+              <div class="mb-3">
+                <label for="empPassword" class="form-label">Password</label>
+                <input type="password" class="form-control" id="empPassword" />
+              </div>
+
+              <div class="mb-3">
+                <label for="empSalary" class="form-label">Salary</label>
+                <input type="number" class="form-control" id="empSalary" />
+              </div>
+
+              <div class="mb-3">
+                <label for="empPhoto" class="form-label">Photo</label>
+                <input
+                  type="file"
+                  class="form-control"
+                  id="empPhoto"
+                  accept="image/*"
+                />
+                <img
+                  id="photoPreview"
+                  class="img-thumbnail mt-2 d-none"
+                  alt="Preview"
+                />
+              </div>
+            </div>
+            <div class="modal-footer">
+              <button type="submit" class="btn btn-primary">
+                Add Employee
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      let currentPhotoBase64 = "";
+
+      async function renderEmployees(filter = "") {
+        const tbody = $("#employeeTable");
+        tbody.empty();
+        let employees = await getEmployees();
+        const filtered = employees.filter((emp) =>
+          emp.name?.toLowerCase().includes(filter.toLowerCase())
+        );
+
+        filtered.forEach((emp) => {
+          tbody.append(`
+          <tr>
+            <td><img src="${getFile(emp.photo)}" class="img-thumbnail"></td>
+            <td>${emp.name}</td>
+            <td>
+
+              <button class="btn btn-info btn-sm show-emp-btn" data-index="${
+                emp.id
+              }">Show Employee</button>
+              
+              <button class="btn btn-success btn-sm augment-btn" data-index="${
+                emp.id
+              }">Augment Salary</button>
+              <button class="btn btn-warning btn-sm edit-btn" data-index="${
+                emp.id
+              }">Edit</button>
+              <button class="btn btn-danger btn-sm delete-btn" data-index="${
+                emp.id
+              }">Delete</button>
+            </td>
+          </tr>
+        `);
+        });
+      }
+
+      function validateForm(data) {
+        let errors = [];
+
+        if (!data.name) errors.push("Name is required.");
+        if (!data.email || !/^\S+@\S+\.\S+$/.test(data.email))
+          errors.push("Valid email is required.");
+        if (!data.password || data.password.length < 6)
+          errors.push("Password must be at least 6 characters.");
+        if (!data.salary || isNaN(data.salary) || data.salary <= 0)
+          errors.push("Salary must be a positive number.");
+        if (!data.photo) errors.push("Photo is required.");
+
+        return errors;
+      }
+
+      $("#empPhoto").on("change", function () {
+        const file = this.files[0];
+        if (file) {
+          const reader = new FileReader();
+          reader.onload = function (e) {
+            currentPhotoBase64 = e.target.result;
+            $("#photoPreview")
+              .attr("src", currentPhotoBase64)
+              .removeClass("d-none");
+          };
+          reader.readAsDataURL(file);
+        }
+      });
+
+      $("#employeeForm").on("submit", async function (e) {
+        e.preventDefault();
+
+        const name = $("#empName").val().trim();
+        const email = $("#empEmail").val().trim();
+        const password = $("#empPassword").val();
+        const salary = $("#empSalary").val();
+        const photoInput = document.getElementById("empPhoto");
+        const photoFile = photoInput.files[0];
+
+        // Simple validation
+        const errors = [];
+        if (!name) errors.push("Name is required.");
+        if (!email || !/^\S+@\S+\.\S+$/.test(email))
+          errors.push("Valid email is required.");
+        if (!password || password.length < 6)
+          errors.push("Password must be at least 6 characters.");
+        if (!salary || isNaN(salary) || salary <= 0)
+          errors.push("Salary must be a positive number.");
+        if (!photoFile) errors.push("Photo is required.");
+
+        if (errors.length > 0) {
+          $("#formErrors").html(errors.join("<br>")).removeClass("d-none");
+          return;
+        }
+        $("#formErrors").addClass("d-none");
+
+        const formData = new FormData();
+        formData.append("name", name);
+        formData.append("email", email);
+        formData.append("password", password);
+        formData.append("salary", salary);
+        formData.append("photo", photoFile);
+
+        try {
+          const response = await fetch(`${baseUrl}/api/v1/employees`, {
+            method: "POST",
+            body: formData,
+          });
+
+          if (!response.ok) {
+            const errorData = await response.json();
+            $("#formErrors")
+              .html(errorData.error || "Failed to add employee")
+              .removeClass("d-none");
+            return;
+          }
+          showToast("Employee added successfully!");
+          $("#employeeModal").modal("hide");
+          $("#employeeForm")[0].reset();
+          $("#photoPreview").addClass("d-none");
+          currentPhotoBase64 = "";
+
+          renderEmployees($("#searchInput").val());
+        } catch (err) {
+          $("#formErrors")
+            .html("An error occurred: " + err.message)
+            .removeClass("d-none");
+        }
+      });
+
+      $("#employeeTable").on("click", ".delete-btn", function () {
+        const index = $(this).data("index");
+        deleteEmployee(index)
+          .then((res) => {
+            if (res) {
+              showToast("Employee deleted successfully!");
+              renderEmployees($("#searchInput").val());
+            }
+          })
+          .catch(() => {
+            showToast("Failed to delete employee");
+          });
+      });
+
+      $("#employeeTable").on("click", ".show-emp-btn", async function () {
+        const id = $(this).data("index");
+        const emp = (await getEmployees()).find((e) => e.id === id);
+        $("#employeeId").html(emp.id);
+        $("#employeeName").html(emp.name);
+        $("#employeeEmail").html(emp.email);
+        $("#employeeSalary").html(emp.salary);
+
+        $("#employeePhoto").html(
+          `<img 
+            src="${getFile(emp.photo)}" 
+            class="img-thumbnail" 
+            style="
+              width: 80px; 
+              height: 80px; 
+              object-fit: cover; 
+              border-radius: 8px; 
+              box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+              transition: transform 0.3s ease;
+            "
+            onmouseover="this.style.transform='scale(1.1)'" 
+            onmouseout="this.style.transform='scale(1)'"
+          >`
+        );
+        $("#employeeShowModal").modal("show");
+      });
+
+      $("#searchInput").on("input", function () {
+        renderEmployees($(this).val());
+      });
+      $("#employeeTable").on("click", ".augment-btn", async function () {
+        const id = $(this).data("index");
+        const emp = (await getEmployees()).find((e) => e.id === id);
+        $("#salaryId").val(emp.id);
+        $("#salaryName").text(emp.name);
+        $("#currentSalary").text(emp.salary);
+        $("#salaryModal").modal("show");
+      });
+
+      $("#salaryForm").on("submit", async function (e) {
+        e.preventDefault();
+        const id = $("#salaryId").val();
+        const augmentation = $("#augmentation").val();
+        if (!augmentation) {
+          alert("augmentation are required");
+        }
+        await augmentSalary(id, augmentation);
+        showToast("Salary updated!");
+        $("#salaryModal").modal("hide");
+        renderEmployees($("#searchInput").val());
+      });
+
+      $("#employeeTable").on("click", ".edit-btn", async function () {
+        const id = $(this).data("index");
+        const emp = (await getEmployees()).find((e) => e.id === id);
+        $("#editId").val(emp.id);
+        $("#editName").val(emp.name);
+        $("#editEmail").val(emp.email);
+        $("#editPassword").val("");
+        $("#editModal").modal("show");
+      });
+
+      $("#editForm").on("submit", async function (e) {
+        e.preventDefault();
+        const id = $("#editId").val();
+        const updatedData = {
+          name: $("#editName").val(),
+          email: $("#editEmail").val(),
+        };
+        const password = $("#editPassword").val();
+        if (password) {
+          updatedData.password = password;
+        }
+        await editEmployee(id, updatedData);
+        showToast("Employee updated!");
+        $("#editModal").modal("hide");
+        renderEmployees($("#searchInput").val());
+      });
+      renderEmployees();
+    </script>
+  </body>
+</html>

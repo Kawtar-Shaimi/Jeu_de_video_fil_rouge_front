@@ -1,0 +1,11 @@
+body {
+  padding: 20px;
+}
+.employee-list {
+  margin-top: 20px;
+}
+.img-thumbnail {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+}
