@@ -119,6 +119,9 @@ async function getJeu(id) {
 
 async function addJeu(jeuData) {
   try {
+    console.log("🌐 API addJeu - URL:", `${baseUrl}/api/v1/jeus`);
+    console.log("📤 API addJeu - Données envoyées:", jeuData);
+    
     const response = await fetch(`${baseUrl}/api/v1/jeus`, {
       method: "POST",
       headers: {
@@ -127,13 +130,19 @@ async function addJeu(jeuData) {
       body: JSON.stringify(jeuData),
     });
     
+    console.log("📡 API addJeu - Réponse:", response.status, response.ok);
+    
     if (!response.ok) {
       const errorData = await response.json();
+      console.error("❌ API addJeu - Erreur serveur:", errorData);
       throw new Error(errorData.error || "Failed to create game");
     }
-    return await response.json();
+    
+    const result = await response.json();
+    console.log("✅ API addJeu - Succès:", result);
+    return result;
   } catch (error) {
-    console.error("Error creating game:", error);
+    console.error("❌ API addJeu - Erreur:", error);
     throw error;
   }
 }

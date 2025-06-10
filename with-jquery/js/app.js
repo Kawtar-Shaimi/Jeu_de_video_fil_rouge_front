@@ -289,6 +289,7 @@ function setupEventHandlers() {
   // Game form submission
   $("#jeuForm").on("submit", async function(e) {
     e.preventDefault();
+    console.log("🎮 Formulaire jeu soumis!");
     
     const jeuData = {
       titre: $("#jeuTitre").val().trim(),
@@ -298,6 +299,8 @@ function setupEventHandlers() {
       stockDisponible: parseInt($("#jeuStock").val()),
       type: $("#jeuType").val()
     };
+    
+    console.log("📦 Données du jeu:", jeuData);
 
     // Add type-specific fields with validation
     if (jeuData.type === 'PC') {
@@ -325,13 +328,16 @@ function setupEventHandlers() {
     }
 
     try {
-      await addJeu(jeuData);
+      console.log("🚀 Appel de addJeu...");
+      const result = await addJeu(jeuData);
+      console.log("✅ Jeu créé:", result);
       showToast("Jeu créé avec succès!");
       $("#jeuModal").modal("hide");
       $("#jeuForm")[0].reset();
       $("#pcFields, #consoleFields").hide();
       loadJeux();
     } catch (error) {
+      console.error("❌ Erreur création jeu:", error);
       showToast(error.message, "error");
     }
   });
@@ -341,165 +347,40 @@ function setupEventHandlers() {
     const selectedType = $(this).val();
     
     if (selectedType === 'PC') {
+      // Afficher les champs PC et les rendre requis
       $("#pcFields").show();
       $("#consoleFields").hide();
+      $("#jeuConfigMin").prop("required", true);
+      $("#jeuPlateforme").prop("required", false);
+      $("#jeuRegionCode").prop("required", false);
     } else if (selectedType === 'Console') {
+      // Afficher les champs Console et les rendre requis
       $("#pcFields").hide();
       $("#consoleFields").show();
+      $("#jeuConfigMin").prop("required", false);
+      $("#jeuPlateforme").prop("required", true);
+      $("#jeuRegionCode").prop("required", true);
     } else {
+      // Cacher tous les champs spécifiques
       $("#pcFields, #consoleFields").hide();
+      $("#jeuConfigMin").prop("required", false);
+      $("#jeuPlateforme").prop("required", false);
+      $("#jeuRegionCode").prop("required", false);
     }
   });
   
-  // Vente preview calculation
-  // Add a new game row to the transaction
-  function addGameRow() {
-    const rowId = Date.now(); // Unique ID for this row
-    const gameRow = $(`
-      <div class="game-row mb-3 p-3 border rounded" data-row-id="${rowId}">
-        <div class="row">
-          <div class="col-md-6">
-            <label class="form-label">Jeu</label>
-            <select class="form-control game-select" required>
-              <option value="">Sélectionner un jeu</option>
-            </select>
-          </div>
-          <div class="col-md-4">
-            <label class="form-label">Quantité</label>
-            <input type="number" class="form-control game-quantity" min="1" required />
-          </div>
-          <div class="col-md-2">
-            <label class="form-label">&nbsp;</label>
-            <button type="button" class="btn btn-danger btn-sm d-block remove-game-btn">
-              🗑️ Supprimer
-            </button>
-          </div>
-        </div>
-        <div class="row mt-2">
-          <div class="col-12">
-            <small class="game-info text-muted"></small>
-          </div>
-        </div>
-      </div>
-    `);
-    
-    $("#gamesContainer").append(gameRow);
-    populateGameSelect(gameRow.find(".game-select"));
-    updateVentePreview();
-  }
-
-  // Remove game row
+  // Dynamic event handlers
   $(document).on("click", ".remove-game-btn", function() {
     $(this).closest(".game-row").remove();
     updateVentePreview();
   });
 
-  // Update game info when selection changes
   $(document).on("change", ".game-select, .game-quantity", function() {
     updateGameRowInfo($(this).closest(".game-row"));
     updateVentePreview();
   });
 
-  // Update client selection
   $("#venteClient").on("change", updateVentePreview);
-
-  // Populate game select dropdown
-  function populateGameSelect(selectElement) {
-    selectElement.find('option:not(:first)').remove();
-    
-    allJeux.filter(jeu => jeu.stockDisponible > 0).forEach(jeu => {
-      selectElement.append(`
-        <option value="${jeu.id}" data-prix="${jeu.prix}" data-stock="${jeu.stockDisponible}">
-          ${jeu.titre} - ${formatPrice(jeu.prix)} (Stock: ${jeu.stockDisponible})
-        </option>
-      `);
-    });
-  }
-
-  // Update game row info
-  function updateGameRowInfo(gameRow) {
-    const jeuSelect = gameRow.find(".game-select");
-    const quantite = parseInt(gameRow.find(".game-quantity").val()) || 0;
-    const selectedOption = jeuSelect.find("option:selected");
-    const infoElement = gameRow.find(".game-info");
-    
-    if (selectedOption.val() && quantite > 0) {
-      const prix = parseFloat(selectedOption.data("prix"));
-      const stock = parseInt(selectedOption.data("stock"));
-      const montantHT = quantite * prix;
-      const montantTTC = montantHT * 1.20;
-      
-      if (quantite > stock) {
-        infoElement.html(`<span class="text-danger">❌ Stock insuffisant! Disponible: ${stock}</span>`);
-      } else {
-        infoElement.html(`💰 Total: ${formatPrice(montantTTC)} TTC (${formatPrice(montantHT)} HT + TVA)`);
-      }
-    } else {
-      infoElement.html("");
-    }
-  }
-
-  // Update transaction preview
-  function updateVentePreview() {
-    const clientId = $("#venteClient").val();
-    const selectedClient = allClients.find(c => c.id == clientId);
-    const gameRows = $(".game-row");
-    
-    if (!selectedClient || gameRows.length === 0) {
-      $("#ventePreview").hide();
-      return;
-    }
-    
-    let totalHT = 0;
-    let gamesList = "";
-    let hasStockIssue = false;
-    
-    gameRows.each(function() {
-      const jeuSelect = $(this).find(".game-select");
-      const quantite = parseInt($(this).find(".game-quantity").val()) || 0;
-      const selectedOption = jeuSelect.find("option:selected");
-      
-      if (selectedOption.val() && quantite > 0) {
-        const jeuTitre = selectedOption.text().split(" - ")[0];
-        const prix = parseFloat(selectedOption.data("prix"));
-        const stock = parseInt(selectedOption.data("stock"));
-        const montantHT = quantite * prix;
-        
-        if (quantite > stock) {
-          hasStockIssue = true;
-          gamesList += `<li class="text-danger">${jeuTitre} x${quantite} - ❌ Stock insuffisant!</li>`;
-        } else {
-          totalHT += montantHT;
-          gamesList += `<li>${jeuTitre} x${quantite} - ${formatPrice(montantHT)} HT</li>`;
-        }
-      }
-    });
-    
-    if (gamesList) {
-      const totalTTC = totalHT * 1.20;
-      const tva = totalHT * 0.20;
-      
-      let previewHtml = `
-        <strong>Client:</strong> ${selectedClient.nom} (${selectedClient.email})<br/>
-        <strong>Jeux commandés:</strong>
-        <ul>${gamesList}</ul>
-      `;
-      
-      if (!hasStockIssue) {
-        previewHtml += `
-          <hr>
-          <strong>Total HT:</strong> ${formatPrice(totalHT)}<br/>
-          <strong>TVA (20%):</strong> ${formatPrice(tva)}<br/>
-          <span class="text-success"><strong>Total TTC: ${formatPrice(totalTTC)}</strong></span>
-        `;
-      }
-      
-      $("#venteDetails").html(previewHtml);
-      $("#ventePreview").show();
-    } else {
-      $("#ventePreview").hide();
-    }
-  }
 
   // Initialize with one game row when modal opens
   $("#venteModal").on("shown.bs.modal", function() {
@@ -535,38 +416,7 @@ function setupEventHandlers() {
     }
   });
   
-  $(document).on("click", ".edit-jeu-btn", async function() {
-    const id = $(this).data("id");
-    const jeu = allJeux.find(j => j.id == id);
-    
-    const newStock = prompt(`Stock actuel: ${jeu.stockDisponible}\nNouveau stock:`, jeu.stockDisponible);
-    
-    if (newStock !== null && !isNaN(newStock) && newStock >= 0) {
-      try {
-        await updateJeu(id, { stockDisponible: parseInt(newStock) });
-        showToast("Stock mis à jour!");
-        loadJeux();
-      } catch (error) {
-        showToast(error.message, "error");
-      }
-    }
-  });
 
-  $(document).on("click", ".delete-jeu-btn", async function() {
-    const id = $(this).data("id");
-    const jeu = allJeux.find(j => j.id == id);
-    
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le jeu "${jeu.titre}" ?\n\nCette action est irréversible.`)) {
-      try {
-        await deleteJeu(id);
-        showToast("Jeu supprimé avec succès!");
-        loadJeux();
-        loadVentes(); // Refresh ventes in case deleted game was in sales
-      } catch (error) {
-        showToast(error.message, "error");
-      }
-    }
-  });
   
   $(document).on("click", ".update-status-btn", function() {
     const id = $(this).data("id");
@@ -596,5 +446,86 @@ function setupEventHandlers() {
   $(".modal").on("hidden.bs.modal", function() {
     $(this).find("form")[0]?.reset();
     $("#ventePreview").hide();
+    
+    // Réinitialiser les champs de jeu
+    if ($(this).attr("id") === "jeuModal") {
+      $("#pcFields, #consoleFields").hide();
+      $("#jeuConfigMin").prop("required", false);
+      $("#jeuPlateforme").prop("required", false);
+      $("#jeuRegionCode").prop("required", false);
+    }
+    
+    // Corriger le problème aria-hidden en supprimant le focus des éléments à l'intérieur
+    $(this).find("*").blur();
   });
-} 
+
+  // Événement avant la fermeture du modal pour gérer le focus
+  $(".modal").on("hide.bs.modal", function() {
+    // Supprimer le focus de tous les éléments dans le modal avant fermeture
+    $(this).find("button, input, select, textarea").blur();
+    
+    // Remettre le focus sur le body pour éviter les conflits
+    document.body.focus();
+  });
+
+  // Événement à l'ouverture du modal pour s'assurer de la bonne gestion
+  $(".modal").on("shown.bs.modal", function() {
+    // S'assurer que le modal peut recevoir le focus
+    $(this).removeAttr("aria-hidden");
+    
+    // Focus sur le premier champ de saisie du modal
+    $(this).find("input, select, textarea").first().focus();
+  });
+}
+
+// ===== GESTIONNAIRES D'ÉVÉNEMENTS JEUX (EN DEHORS DE setupEventHandlers) =====
+$(document).on("click", ".edit-jeu-btn", async function() {
+  console.log("🎮 Bouton Edit Jeu cliqué!");
+  const id = $(this).data("id");
+  const jeu = allJeux.find(j => j.id == id);
+  
+  if (!jeu) {
+    showToast("Jeu non trouvé!", "error");
+    return;
+  }
+  
+  console.log("📦 Jeu trouvé:", jeu);
+  const newStock = prompt(`Stock actuel: ${jeu.stockDisponible}\nNouveau stock:`, jeu.stockDisponible);
+  
+  if (newStock !== null && !isNaN(newStock) && newStock >= 0) {
+    try {
+      console.log("🔄 Mise à jour du stock...", { id, newStock: parseInt(newStock) });
+      await updateJeu(id, { stockDisponible: parseInt(newStock) });
+      showToast("Stock mis à jour!");
+      loadJeux();
+    } catch (error) {
+      console.error("❌ Erreur mise à jour stock:", error);
+      showToast(error.message, "error");
+    }
+  }
+});
+
+$(document).on("click", ".delete-jeu-btn", async function() {
+  console.log("🗑️ Bouton Delete Jeu cliqué!");
+  const id = $(this).data("id");
+  const jeu = allJeux.find(j => j.id == id);
+  
+  if (!jeu) {
+    showToast("Jeu non trouvé!", "error");
+    return;
+  }
+  
+  console.log("📦 Jeu à supprimer:", jeu);
+  if (confirm(`Êtes-vous sûr de vouloir supprimer le jeu "${jeu.titre}" ?\n\nCette action est irréversible.`)) {
+    try {
+      console.log("🗑️ Suppression du jeu...", id);
+      await deleteJeu(id);
+      showToast("Jeu supprimé avec succès!");
+      loadJeux();
+      loadVentes(); // Refresh ventes in case deleted game was in sales
+    } catch (error) {
+      console.error("❌ Erreur suppression:", error);
+      showToast(error.message, "error");
+    }
+  }
+}); 

@@ -27,6 +27,21 @@
       .badge {
         font-size: 0.8em;
       }
+      
+      /* Fix pour le problème aria-hidden et focus */
+      .modal[aria-hidden="true"] * {
+        pointer-events: none !important;
+      }
+      
+      .modal[aria-hidden="true"] {
+        pointer-events: none !important;
+      }
+      
+      /* S'assurer que les champs cachés ne peuvent pas être focus */
+      #pcFields[style*="display: none"] *,
+      #consoleFields[style*="display: none"] * {
+        pointer-events: none !important;
+      }
     </style>
   </head>
   <body>
