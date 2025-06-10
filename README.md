@@ -9,7 +9,7 @@ La différence réside dans l'architecture adoptée :
 - Le projet `native-spa` suit une architecture **modulaire**.
 - Le projet `with-jquery` est basé sur une approche **fonctionnelle**.
 
-Vous êtes libre d’adopter l’approche de votre choix.
+Vous êtes libre d'adopter l'approche de votre choix.
 
 ---
 
@@ -22,18 +22,26 @@ Si vous utilisez VS Code, vous pouvez simplement utiliser l'extension **Live Ser
 
 ### Pour le projet avec jQuery :
 
-Aucune configuration n’est nécessaire. Il peut être ouvert directement dans le navigateur.
+Aucune configuration n'est nécessaire. Il peut être ouvert directement dans le navigateur.
 
 ### Configuration commune :
 
-Pour les **deux projets**, veillez à adapter la variable `baseUrl` à votre propre endpoint.  
-Dans mon cas : `localhost/exemple`
+✅ **DÉJÀ CONFIGURÉ** - La variable `baseUrl` est maintenant configurée pour pointer vers votre backend :
+`http://localhost/Jeu_de_video_fil_rouge/boilerplate-php-fy1-sql`
+
+---
+
+## URLs d'accès
+
+- **jQuery Version:** `http://localhost/Jeu_de_video_fil_rouge/sample-front-fy1/with-jquery/`
+- **Native-SPA Version:** `http://localhost/Jeu_de_video_fil_rouge/sample-front-fy1/native-spa/`
+- **Backend API:** `http://localhost/Jeu_de_video_fil_rouge/boilerplate-php-fy1-sql/`
 
 ---
 
 ## Description
 
-Ce projet est une démonstration simple d’un **système de gestion des employés**, incluant la gestion des **augmentations salariales**.
+Ce projet est une démonstration simple d'un **système de gestion des employés**, incluant la gestion des **augmentations salariales**.
 
 ---
 

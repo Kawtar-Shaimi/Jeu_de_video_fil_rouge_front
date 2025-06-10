@@ -7,11 +7,15 @@ async function getClients(search = null) {
     if (search) {
       url += `?search=${encodeURIComponent(search)}`;
     }
+    console.log("🌐 Appel API clients:", url);
     const response = await fetch(url);
+    console.log("📡 Réponse clients:", response.status, response.ok);
     if (!response.ok) throw new Error("Failed to fetch clients");
-    return await response.json();
+    const data = await response.json();
+    console.log("📦 Données clients reçues:", data);
+    return data;
   } catch (error) {
-    console.error("Error fetching clients:", error);
+    console.error("❌ Erreur API clients:", error);
     return [];
   }
 }
@@ -89,7 +93,7 @@ async function deleteClient(id) {
 // ===== JEUX =====
 async function getJeux(search = null) {
   try {
-    let url = `${baseUrl}/api/v1/jeus`; // Note: le backend génère "jeus" au lieu de "jeux"
+         let url = `${baseUrl}/api/v1/jeus`; // Note: le backend génère "jeus" au lieu de "jeux"
     if (search) {
       url += `?search=${encodeURIComponent(search)}`;
     }

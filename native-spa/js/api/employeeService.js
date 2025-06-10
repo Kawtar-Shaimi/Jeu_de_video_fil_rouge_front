@@ -1,4 +1,4 @@
-const baseUrl = 'http://localhost/exemple';
+const baseUrl = 'http://localhost/Jeu_de_video_fil_rouge/boilerplate-php-fy1-sql';
 
 export const getEmployees = async () => {
     const response = await fetch(`${baseUrl}/api/v1/employees`);

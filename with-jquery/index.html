@@ -68,7 +68,7 @@
       </li>
       <li class="nav-item" role="presentation">
         <button class="nav-link" id="ventes-tab" data-bs-toggle="tab" data-bs-target="#ventes" type="button" role="tab">
-           Ventes
+          💰 Ventes
         </button>
       </li>
     </ul>
@@ -410,11 +410,34 @@
     </div>
 
     <script>
+      console.log("🔧 Script inline chargé");
+      console.log("📚 jQuery disponible:", typeof $);
+      console.log("🌐 baseUrl disponible:", typeof baseUrl);
+      
       $(document).ready(function() {
-        loadClients();
-        loadJeux();
-        loadVentes();
-        setupEventHandlers();
+        console.log("🚀 Document ready - Initialisation...");
+        console.log("🔍 Fonctions disponibles:", {
+          loadClients: typeof loadClients,
+          loadJeux: typeof loadJeux, 
+          loadVentes: typeof loadVentes,
+          setupEventHandlers: typeof setupEventHandlers
+        });
+        console.log("🔍 Services disponibles:", {
+          getClients: typeof getClients,
+          getJeux: typeof getJeux,
+          getVentes: typeof getVentes
+        });
+        
+        if (typeof loadClients === 'function') {
+          console.log("✅ Démarrage des fonctions...");
+          loadClients();
+          loadJeux();
+          loadVentes();
+          setupEventHandlers();
+        } else {
+          console.error("❌ Les fonctions app.js ne sont pas chargées!");
+          console.error("💡 Vérifiez que app.js se charge correctement");
+        }
       });
     </script>
   </body>
