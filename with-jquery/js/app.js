@@ -382,6 +382,142 @@ function setupEventHandlers() {
 
   $("#venteClient").on("change", updateVentePreview);
 
+  // ===== FONCTIONS POUR LES VENTES =====
+  
+  // Add a new game row to the transaction
+  function addGameRow() {
+    const rowId = Date.now(); // Unique ID for this row
+    const gameRow = $(`
+      <div class="game-row mb-3 p-3 border rounded" data-row-id="${rowId}">
+        <div class="row">
+          <div class="col-md-6">
+            <label class="form-label">Jeu</label>
+            <select class="form-control game-select" required>
+              <option value="">Sélectionner un jeu</option>
+            </select>
+          </div>
+          <div class="col-md-4">
+            <label class="form-label">Quantité</label>
+            <input type="number" class="form-control game-quantity" min="1" required />
+          </div>
+          <div class="col-md-2">
+            <label class="form-label">&nbsp;</label>
+            <button type="button" class="btn btn-danger btn-sm d-block remove-game-btn">
+              🗑️ Supprimer
+            </button>
+          </div>
+        </div>
+        <div class="row mt-2">
+          <div class="col-12">
+            <small class="game-info text-muted"></small>
+          </div>
+        </div>
+      </div>
+    `);
+    
+    $("#gamesContainer").append(gameRow);
+    populateGameSelect(gameRow.find(".game-select"));
+    updateVentePreview();
+  }
+
+  // Populate game select dropdown
+  function populateGameSelect(selectElement) {
+    selectElement.find('option:not(:first)').remove();
+    
+    allJeux.filter(jeu => jeu.stockDisponible > 0).forEach(jeu => {
+      selectElement.append(`
+        <option value="${jeu.id}" data-prix="${jeu.prix}" data-stock="${jeu.stockDisponible}">
+          ${jeu.titre} - ${formatPrice(jeu.prix)} (Stock: ${jeu.stockDisponible})
+        </option>
+      `);
+    });
+  }
+
+  // Update game row info
+  function updateGameRowInfo(gameRow) {
+    const jeuSelect = gameRow.find(".game-select");
+    const quantite = parseInt(gameRow.find(".game-quantity").val()) || 0;
+    const selectedOption = jeuSelect.find("option:selected");
+    const infoElement = gameRow.find(".game-info");
+    
+    if (selectedOption.val() && quantite > 0) {
+      const prix = parseFloat(selectedOption.data("prix"));
+      const stock = parseInt(selectedOption.data("stock"));
+      const montantHT = quantite * prix;
+      const montantTTC = montantHT * 1.20;
+      
+      if (quantite > stock) {
+        infoElement.html(`<span class="text-danger">❌ Stock insuffisant! Disponible: ${stock}</span>`);
+      } else {
+        infoElement.html(`💰 Total: ${formatPrice(montantTTC)} TTC (${formatPrice(montantHT)} HT + TVA)`);
+      }
+    } else {
+      infoElement.html("");
+    }
+  }
+
+  // Update transaction preview
+  function updateVentePreview() {
+    const clientId = $("#venteClient").val();
+    const selectedClient = allClients.find(c => c.id == clientId);
+    const gameRows = $(".game-row");
+    
+    if (!selectedClient || gameRows.length === 0) {
+      $("#ventePreview").hide();
+      return;
+    }
+    
+    let totalHT = 0;
+    let gamesList = "";
+    let hasStockIssue = false;
+    
+    gameRows.each(function() {
+      const jeuSelect = $(this).find(".game-select");
+      const quantite = parseInt($(this).find(".game-quantity").val()) || 0;
+      const selectedOption = jeuSelect.find("option:selected");
+      
+      if (selectedOption.val() && quantite > 0) {
+        const jeuTitre = selectedOption.text().split(" - ")[0];
+        const prix = parseFloat(selectedOption.data("prix"));
+        const stock = parseInt(selectedOption.data("stock"));
+        const montantHT = quantite * prix;
+        
+        if (quantite > stock) {
+          hasStockIssue = true;
+          gamesList += `<li class="text-danger">${jeuTitre} x${quantite} - ❌ Stock insuffisant!</li>`;
+        } else {
+          totalHT += montantHT;
+          gamesList += `<li>${jeuTitre} x${quantite} - ${formatPrice(montantHT)} HT</li>`;
+        }
+      }
+    });
+    
+    if (gamesList) {
+      const totalTTC = totalHT * 1.20;
+      const tva = totalHT * 0.20;
+      
+      let previewHtml = `
+        <strong>Client:</strong> ${selectedClient.nom} (${selectedClient.email})<br/>
+        <strong>Jeux commandés:</strong>
+        <ul>${gamesList}</ul>
+      `;
+      
+      if (!hasStockIssue) {
+        previewHtml += `
+          <hr>
+          <strong>Total HT:</strong> ${formatPrice(totalHT)}<br/>
+          <strong>TVA (20%):</strong> ${formatPrice(tva)}<br/>
+          <span class="text-success"><strong>Total TTC: ${formatPrice(totalTTC)}</strong></span>
+        `;
+      }
+      
+      $("#venteDetails").html(previewHtml);
+      $("#ventePreview").show();
+    } else {
+      $("#ventePreview").hide();
+    }
+  }
+
   // Initialize with one game row when modal opens
   $("#venteModal").on("shown.bs.modal", function() {
     if ($("#gamesContainer .game-row").length === 0) {
@@ -389,32 +525,7 @@ function setupEventHandlers() {
     }
   });
   
-  // Button click handlers
-  $(document).on("click", ".edit-client-btn", async function() {
-    const id = $(this).data("id");
-    const client = allClients.find(c => c.id == id);
-    
-    $("#editClientId").val(client.id);
-    $("#editClientNom").val(client.nom);
-    $("#editClientEmail").val(client.email);
-    $("#editClientPhone").val(client.phone);
-    $("#editClientModal").modal("show");
-  });
-  
-  $(document).on("click", ".delete-client-btn", async function() {
-    const id = $(this).data("id");
-    const client = allClients.find(c => c.id == id);
-    
-    if (confirm(`Êtes-vous sûr de vouloir supprimer le client "${client.nom}" ?`)) {
-      try {
-        await deleteClient(id);
-        showToast("Client supprimé avec succès!");
-        loadClients();
-      } catch (error) {
-        showToast(error.message, "error");
-      }
-    }
-  });
+
   
 
   
@@ -525,6 +636,51 @@ $(document).on("click", ".delete-jeu-btn", async function() {
       loadVentes(); // Refresh ventes in case deleted game was in sales
     } catch (error) {
       console.error("❌ Erreur suppression:", error);
+      showToast(error.message, "error");
+    }
+  }
+});
+
+// ===== GESTIONNAIRES D'ÉVÉNEMENTS CLIENTS (EN DEHORS DE setupEventHandlers) =====
+$(document).on("click", ".edit-client-btn", async function() {
+  console.log("✏️ Bouton Edit Client cliqué!");
+  const id = $(this).data("id");
+  console.log("📋 ID Client:", id);
+  const client = allClients.find(c => c.id == id);
+  console.log("👤 Client trouvé:", client);
+  
+  if (!client) {
+    showToast("Client non trouvé!", "error");
+    return;
+  }
+  
+  $("#editClientId").val(client.id);
+  $("#editClientNom").val(client.nom);
+  $("#editClientEmail").val(client.email);
+  $("#editClientPhone").val(client.phone);
+  $("#editClientModal").modal("show");
+});
+
+$(document).on("click", ".delete-client-btn", async function() {
+  console.log("🗑️ Bouton Delete Client cliqué!");
+  const id = $(this).data("id");
+  console.log("📋 ID Client:", id);
+  const client = allClients.find(c => c.id == id);
+  console.log("👤 Client à supprimer:", client);
+  
+  if (!client) {
+    showToast("Client non trouvé!", "error");
+    return;
+  }
+  
+  if (confirm(`Êtes-vous sûr de vouloir supprimer le client "${client.nom}" ?`)) {
+    try {
+      console.log("🗑️ Suppression du client...", id);
+      await deleteClient(id);
+      showToast("Client supprimé avec succès!");
+      loadClients();
+    } catch (error) {
+      console.error("❌ Erreur suppression client:", error);
       showToast(error.message, "error");
     }
   }
