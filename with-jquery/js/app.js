@@ -1,41 +1,41 @@
 // ===== LOAD DATA FUNCTIONS =====
 async function loadClients() {
   try {
-    console.log("🔄 Chargement des clients...");
+    console.log(" Chargement des clients...");
     allClients = await getClients();
-    console.log("✅ Clients chargés:", allClients);
+    console.log(" Clients chargés:", allClients);
     renderClients();
     populateClientSelect();
-    console.log("✅ Clients affichés");
+    console.log(" Clients affichés");
   } catch (error) {
-    console.error("❌ Erreur clients:", error);
+    console.error(" Erreur clients:", error);
     showToast("Erreur lors du chargement des clients", "error");
   }
 }
 
 async function loadJeux() {
   try {
-    console.log("🔄 Chargement des jeux...");
+    console.log(" Chargement des jeux...");
     allJeux = await getJeux();
-    console.log("✅ Jeux chargés:", allJeux);
+    console.log(" Jeux chargés:", allJeux);
     renderJeux();
-    console.log("✅ Jeux affichés");
+    console.log(" Jeux affichés");
   } catch (error) {
-    console.error("❌ Erreur jeux:", error);
+    console.error(" Erreur jeux:", error);
     showToast("Erreur lors du chargement des jeux", "error");
   }
 }
 
 async function loadVentes() {
   try {
-    console.log("🔄 Chargement des ventes...");
+    console.log(" Chargement des ventes...");
     allVentes = await getVentes();
-    console.log("✅ Ventes chargées:", allVentes);
+    console.log(" Ventes chargées:", allVentes);
     filteredVentes = allVentes;
     renderVentes();
-    console.log("✅ Ventes affichées");
+    console.log(" Ventes affichées");
   } catch (error) {
-    console.error("❌ Erreur ventes:", error);
+    console.error(" Erreur ventes:", error);
     showToast("Erreur lors du chargement des ventes", "error");
   }
 }
@@ -330,14 +330,14 @@ function setupEventHandlers() {
     try {
       console.log("🚀 Appel de addJeu...");
       const result = await addJeu(jeuData);
-      console.log("✅ Jeu créé:", result);
+      console.log(" Jeu créé:", result);
       showToast("Jeu créé avec succès!");
       $("#jeuModal").modal("hide");
       $("#jeuForm")[0].reset();
       $("#pcFields, #consoleFields").hide();
       loadJeux();
     } catch (error) {
-      console.error("❌ Erreur création jeu:", error);
+      console.error(" Erreur création jeu:", error);
       showToast(error.message, "error");
     }
   });
@@ -447,7 +447,7 @@ function setupEventHandlers() {
       const montantTTC = montantHT * 1.20;
       
       if (quantite > stock) {
-        infoElement.html(`<span class="text-danger">❌ Stock insuffisant! Disponible: ${stock}</span>`);
+        infoElement.html(`<span class="text-danger"> Stock insuffisant! Disponible: ${stock}</span>`);
       } else {
         infoElement.html(`💰 Total: ${formatPrice(montantTTC)} TTC (${formatPrice(montantHT)} HT + TVA)`);
       }
@@ -484,7 +484,7 @@ function setupEventHandlers() {
         
         if (quantite > stock) {
           hasStockIssue = true;
-          gamesList += `<li class="text-danger">${jeuTitre} x${quantite} - ❌ Stock insuffisant!</li>`;
+          gamesList += `<li class="text-danger">${jeuTitre} x${quantite} -  Stock insuffisant!</li>`;
         } else {
           totalHT += montantHT;
           gamesList += `<li>${jeuTitre} x${quantite} - ${formatPrice(montantHT)} HT</li>`;
@@ -605,12 +605,12 @@ $(document).on("click", ".edit-jeu-btn", async function() {
   
   if (newStock !== null && !isNaN(newStock) && newStock >= 0) {
     try {
-      console.log("🔄 Mise à jour du stock...", { id, newStock: parseInt(newStock) });
+      console.log(" Mise à jour du stock...", { id, newStock: parseInt(newStock) });
       await updateJeu(id, { stockDisponible: parseInt(newStock) });
       showToast("Stock mis à jour!");
       loadJeux();
     } catch (error) {
-      console.error("❌ Erreur mise à jour stock:", error);
+      console.error(" Erreur mise à jour stock:", error);
       showToast(error.message, "error");
     }
   }
@@ -635,7 +635,7 @@ $(document).on("click", ".delete-jeu-btn", async function() {
       loadJeux();
       loadVentes(); // Refresh ventes in case deleted game was in sales
     } catch (error) {
-      console.error("❌ Erreur suppression:", error);
+      console.error(" Erreur suppression:", error);
       showToast(error.message, "error");
     }
   }
@@ -680,7 +680,7 @@ $(document).on("click", ".delete-client-btn", async function() {
       showToast("Client supprimé avec succès!");
       loadClients();
     } catch (error) {
-      console.error("❌ Erreur suppression client:", error);
+      console.error(" Erreur suppression client:", error);
       showToast(error.message, "error");
     }
   }
